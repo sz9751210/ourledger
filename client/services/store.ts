@@ -41,6 +41,7 @@ interface AppState {
   setActiveLedger: (id: string) => void;
   addLedger: (name: string, memberIds: string[]) => Promise<void>;
   updateLedger: (id: string, updates: Partial<Ledger>) => Promise<void>;
+  deleteLedger: (id: string) => Promise<void>;
   addUser: (name: string, color: string) => Promise<string | void>;
   deleteUser: (id: string) => Promise<void>;
   addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
@@ -201,6 +202,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addNotification(t('ledgerUpdated'), t('updated'), 'success');
     } catch (err) {
       addNotification(t('error'), 'Failed to update ledger', 'info');
+    }
+  };
+
+    const deleteLedger = async (id: string) => {
+    // 防止刪除最後一本帳本，避免畫面壞掉
+    if (ledgers.length <= 1) {
+      addNotification(t('error'), t('cannotDeleteLastLedger', { defaultValue: 'Cannot delete the last ledger' }), 'info');
+      return;
+    }
+
+    try {
+      await api.deleteLedger(id);
+      
+      // 更新列表
+      const newLedgers = ledgers.filter(l => l.id !== id);
+      setLedgers(newLedgers);
+
+      // 如果刪除的是當前正在檢視的帳本，自動切換到第一本
+      if (activeLedgerId === id) {
+        setActiveLedger(newLedgers[0].id);
+      }
+
+      addNotification(t('deleted'), t('ledgerDeleted', { defaultValue: 'Ledger deleted' }), 'info');
+    } catch (err) {
+      addNotification(t('error'), 'Failed to delete ledger', 'info');
     }
   };
 
@@ -502,6 +528,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveLedger,
     addLedger,
     updateLedger,
+    deleteLedger,
     addUser,
     deleteUser,
     addExpense,
@@ -522,7 +549,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     refreshRates,
     exportData,
     t
-  }), [isLoading, activeLedgerId, activeLedgerMembers, ledgers, expenses, categories, notifications, language, darkMode, baseCurrency, rates, confirmDialog, showConfirm, hideConfirm, calculateBalance, convertAmount, refreshRates, t, users, monthlyBudget]);
+  }), [isLoading, activeLedgerId, activeLedgerMembers, ledgers, expenses, categories, notifications, language, darkMode, baseCurrency, rates, confirmDialog, showConfirm, hideConfirm, calculateBalance, convertAmount, refreshRates, t, users, deleteLedger, monthlyBudget]);
 
   return React.createElement(AppContext.Provider, { value }, children);
 };

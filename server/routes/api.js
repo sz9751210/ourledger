@@ -14,7 +14,19 @@ router.delete('/users/:id', async (req, res) => res.json(await User.findByIdAndD
 router.get('/ledgers', async (req, res) => res.json(await Ledger.find()));
 router.post('/ledgers', async (req, res) => res.json(await Ledger.create(req.body)));
 router.patch('/ledgers/:id', async (req, res) => res.json(await Ledger.findByIdAndUpdate(req.params.id, req.body, { new: true })));
-router.delete('/ledgers/:id', async (req, res) => res.json(await Ledger.findByIdAndDelete(req.params.id)));
+// router.delete('/ledgers/:id', async (req, res) => res.json(await Ledger.findByIdAndDelete(req.params.id)));
+router.delete('/ledgers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    // 1. 先刪除該帳本下的所有支出
+    await Expense.deleteMany({ ledgerId: id });
+    // 2. 再刪除帳本本身
+    await Ledger.findByIdAndDelete(id);
+    res.json({ message: 'Ledger and associated expenses deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete ledger' });
+  }
+});
 
 // --- Categories ---
 router.get('/categories', async (req, res) => res.json(await Category.find()));
