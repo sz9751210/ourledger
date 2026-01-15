@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # 1. MongoDB
+  mongo:
+    image: mongo:6.0
+    container_name: ledger_mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  # 2. Backend Server
+  server:
+    build: ./server
+    container_name: ledger_server
+    restart: always
+    ports:
+      - "5050:5050"
+    environment:
+      - MONGO_URI=mongodb://ledger_mongo:27017/ledger_db
+    depends_on:
+      - mongo
+
+  # 3. Frontend Client [新增部分]
+  client:
+    build: ./client
+    container_name: ledger_client
+    restart: always
+    ports:
+      - "8080:80" # 將電腦的 3000 port 對應到容器的 Nginx 80 port
+    depends_on:
+      - server # 確保後端先啟動
+
+volumes:
+  mongo_data:

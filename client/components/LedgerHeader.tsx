@@ -37,20 +37,15 @@ export const LedgerHeader: React.FC = () => {
            // m1 is owed by m2
            headerText = t('xOwesY', { x: m2.name, y: m1.name });
            balanceToShow = b1;
-           // Visual color logic: Green if current user is receiving, Red if paying.
-           // If I am m1 (receiver), positive. If I am m2 (payer), negative.
            isPositive = (currentUser.id === m1.id);
         } else {
            // b1 < 0 -> m1 owes m2
            headerText = t('xOwesY', { x: m1.name, y: m2.name });
            balanceToShow = Math.abs(b1);
-           // If I am m2 (receiver), positive. If I am m1 (payer), negative.
            isPositive = (currentUser.id === m2.id);
         }
      }
   } else {
-     // Fallback for > 2 members or 1 member
-     // Show current user status with explicit name
      const myBal = calculateBalance(activeLedgerId, currentUser.id);
      balanceToShow = Math.abs(myBal);
      isZero = Math.abs(myBal) < 0.01;
@@ -72,10 +67,11 @@ export const LedgerHeader: React.FC = () => {
     }
   };
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  // 修改 1: 建立帳本改為 Async
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newLedgerName.trim()) {
-      addLedger(newLedgerName, selectedMembers);
+      await addLedger(newLedgerName, selectedMembers);
       setNewLedgerName('');
       setSelectedMembers([currentUser.id]);
       setIsCreating(false);
@@ -83,35 +79,41 @@ export const LedgerHeader: React.FC = () => {
     }
   };
 
-  const handleUpdateMembers = () => {
+  // 修改 2: 更新成員改為 Async
+  const handleUpdateMembers = async () => {
      if (activeLedger) {
-       updateLedger(activeLedger.id, { members: selectedMembers });
+       await updateLedger(activeLedger.id, { members: selectedMembers });
        setIsManagingMembers(false);
        setIsAddingNewUser(false);
      }
   };
 
-  const handleQuickAddUser = () => {
+  // 修改 3: 快速新增使用者改為 Async，並等待 ID 回傳
+  const handleQuickAddUser = async () => {
     if (newUserName.trim()) {
       const color = AVAILABLE_COLORS[Math.floor(Math.random() * AVAILABLE_COLORS.length)];
-      const newId = addUser(newUserName, color);
-      // Automatically select the new user
-      setSelectedMembers(prev => [...prev, newId]);
-      setNewUserName('');
-      setIsAddingNewUser(false);
+      // 關鍵修正：必須 await API 回傳的 ID
+      const newId = await addUser(newUserName, color);
+      
+      if (newId && typeof newId === 'string') {
+        setSelectedMembers(prev => [...prev, newId]);
+        setNewUserName('');
+        setIsAddingNewUser(false);
+      }
     }
   };
 
+  // 修改 4: 刪除使用者改為 Async
   const handleDeleteUser = (e: React.MouseEvent, userId: string) => {
     e.stopPropagation();
     showConfirm(
       t('confirmDelete'),
       t('confirmDeleteUser'),
-      () => {
-        deleteUser(userId);
+      async () => { // 這裡也要 async
+        await deleteUser(userId);
         setSelectedMembers(prev => prev.filter(id => id !== userId));
       },
-      true // Destructive
+      true 
     );
   };
 
@@ -134,7 +136,10 @@ export const LedgerHeader: React.FC = () => {
         setIsMenuOpen(false);
         setIsCreating(false); 
         setNewLedgerName('');
-        setSelectedMembers([currentUser.id]);
+        // 這裡需要保護，確保 currentUser 存在
+        if (currentUser && currentUser.id) {
+            setSelectedMembers([currentUser.id]);
+        }
     } else {
         setIsMenuOpen(true);
     }
@@ -149,7 +154,7 @@ export const LedgerHeader: React.FC = () => {
             onClick={toggleMenu}
             className="inline-flex items-center space-x-2 bg-milk-100 dark:bg-stone-800 px-4 py-1.5 rounded-full text-stone-600 dark:text-stone-300 font-bold text-sm tracking-wide hover:bg-milk-200 dark:hover:bg-stone-700 transition-colors"
             >
-            <span>{activeLedger?.name}</span>
+            <span>{activeLedger?.name || 'Loading...'}</span>
             <ChevronDown size={14} className={`transform transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
             </button>
             {/* Dropdown Menu */}
@@ -329,7 +334,7 @@ export const LedgerHeader: React.FC = () => {
         </div>
       )}
 
-      {/* Balance Hero */}
+      {/* Balance Hero (Same as before) */}
       <div className="text-center md:flex md:items-end md:justify-center md:gap-8 md:text-left">
         {isZero ? (
           <div className="space-y-1 md:flex md:items-center md:gap-4 md:space-y-0">
