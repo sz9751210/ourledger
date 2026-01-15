@@ -14,14 +14,14 @@ interface AppState {
   expenses: Expense[];
   categories: Category[];
   notifications: AppNotification[];
-  
+
   // Settings
   language: Language;
   darkMode: boolean;
   baseCurrency: CurrencyCode;
   rates: Record<string, number>;
   monthlyBudget: number;
-  
+
   // Helpers
   activeLedgerMembers: User[];
   getMember: (id: string) => User | undefined;
@@ -75,11 +75,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  
+
   // UI States
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [confirmDialog, setConfirmDialog] = useState({
-    isOpen: false, title: '', message: '', onConfirm: () => {}, isDestructive: false
+    isOpen: false, title: '', message: '', onConfirm: () => { }, isDestructive: false
   });
 
   // Settings States
@@ -95,7 +95,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [users]);
 
   // --- Helpers ---
-  
+
   const t = useCallback((key: string, params?: Record<string, string>) => {
     let text = (translations[language] as any)[key] || key;
     if (params) {
@@ -138,7 +138,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         setUsers(usersRes.data);
         setLedgers(ledgersRes.data);
-        
+
         // 如果後端有分類就用後端的，沒有就用預設
         if (categoriesRes.data && categoriesRes.data.length > 0) {
           setCategories(categoriesRes.data);
@@ -161,7 +161,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // --- Fetch Expenses on Ledger Change ---
   useEffect(() => {
     if (!activeLedgerId) return;
-    
+
     const loadExpenses = async () => {
       try {
         const res = await api.getExpenses(activeLedgerId);
@@ -178,14 +178,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addLedger = async (name: string, memberIds: string[]) => {
     try {
-      const payload = { 
-        name, 
+      const payload = {
+        name,
         members: memberIds.length > 0 ? memberIds : [currentUser.id],
         type: 'trip' as const
       };
       const res = await api.createLedger(payload);
       const newLedger = res.data;
-      
+
       setLedgers(prev => [...prev, newLedger]);
       setActiveLedger(newLedger.id);
       addNotification(t('newLedger'), `${t('added')} ${name}`, 'success');
@@ -213,7 +213,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       const res = await api.createUser(payload);
       const newUser = res.data;
-      
+
       setUsers(prev => [...prev, newUser]);
       addNotification(t('userAdded'), `${t('added')} ${name}`, 'success');
       return newUser.id;
@@ -224,8 +224,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteUser = async (id: string) => {
     if (users.length <= 1) {
-       addNotification(t('error'), t('cannotDeleteLastUser'), 'info');
-       return;
+      addNotification(t('error'), t('cannotDeleteLastUser'), 'info');
+      return;
     }
     try {
       await api.deleteUser(id);
@@ -278,7 +278,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const res = await api.createExpense(newExpense);
       const savedExpense = res.data;
-      
+
       setExpenses(prev => [savedExpense, ...prev]);
       if (!savedExpense.isSettlement) {
         addNotification(t('expenseSaved'), `${t('added')} ${savedExpense.description}`, 'success');
@@ -368,24 +368,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (expense.isSettlement) {
         if (expense.paidBy === userId) {
-           myNetBalance += normalizedAmount;
+          myNetBalance += normalizedAmount;
         } else if (expense.beneficiaryId === userId) {
-           myNetBalance -= normalizedAmount;
+          myNetBalance -= normalizedAmount;
         } else if (expense.splitType === 'settlement' && !expense.beneficiaryId && expense.paidBy !== userId) {
-             myNetBalance -= normalizedAmount; 
+          myNetBalance -= normalizedAmount;
         }
         return;
       }
 
       if (expense.splitType === 'equal') {
-        const memberCount = ledger.members.length || 2;
+        const validMembers = ledger.members.filter(memberId => users.some(u => u.id === memberId));
+        const memberCount = validMembers.length || ledger.members.length || 2;
+
         const splitAmount = normalizedAmount / memberCount;
+
         if (expense.paidBy === userId) {
           myNetBalance += (normalizedAmount - splitAmount);
         } else {
-          myNetBalance -= splitAmount;
+          if (validMembers.includes(userId)) {
+            myNetBalance -= splitAmount;
+          }
         }
-      } 
+      }
       else if (expense.splitType === 'full_for_partner') {
         const beneficiary = expense.beneficiaryId;
         if (expense.paidBy === userId && beneficiary !== userId) {
@@ -395,23 +400,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
       else if (expense.splitType === 'percentage' && expense.splits) {
-         const myPercentage = expense.splits[userId] || 0;
-         const myShare = normalizedAmount * (myPercentage / 100);
-         if (expense.paidBy === userId) {
-             myNetBalance += (normalizedAmount - myShare);
-         } else {
-             myNetBalance -= myShare;
-         }
+        const myPercentage = expense.splits[userId] || 0;
+        const myShare = normalizedAmount * (myPercentage / 100);
+        if (expense.paidBy === userId) {
+          myNetBalance += (normalizedAmount - myShare);
+        } else {
+          myNetBalance -= myShare;
+        }
       }
       else if (expense.splitType === 'amount' && expense.splits) {
-         const myShareRaw = expense.splits[userId] || 0;
-         const rate = normalizedAmount / (expense.amount || 1); 
-         const myShareNormalized = myShareRaw * rate;
-         if (expense.paidBy === userId) {
-             myNetBalance += (normalizedAmount - myShareNormalized);
-         } else {
-             myNetBalance -= myShareNormalized;
-         }
+        const myShareRaw = expense.splits[userId] || 0;
+        const rate = normalizedAmount / (expense.amount || 1);
+        const myShareNormalized = myShareRaw * rate;
+        if (expense.paidBy === userId) {
+          myNetBalance += (normalizedAmount - myShareNormalized);
+        } else {
+          myNetBalance -= myShareNormalized;
+        }
       }
     });
 
@@ -421,11 +426,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const settleUp = (ledgerId: string) => {
     const balance = calculateBalance(ledgerId, currentUser.id);
     if (Math.abs(balance) < 0.01) return;
-    
+
     const amount = Math.abs(balance);
     const ledger = ledgers.find(l => l.id === ledgerId);
     const otherMember = ledger?.members.find(m => m !== currentUser.id) || 'u2';
-    const isMyDebt = balance < 0; 
+    const isMyDebt = balance < 0;
 
     const settlementExpense: Omit<Expense, 'id'> = {
       ledgerId,
@@ -433,8 +438,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currency: baseCurrency,
       description: 'Settlement Payment',
       categoryId: 'c6', // 確保你有 ID 為 c6 的分類，或從 categories 尋找 'Settlement'
-      paidBy: isMyDebt ? currentUser.id : otherMember, 
-      beneficiaryId: isMyDebt ? otherMember : currentUser.id, 
+      paidBy: isMyDebt ? currentUser.id : otherMember,
+      beneficiaryId: isMyDebt ? otherMember : currentUser.id,
       date: new Date().toISOString(),
       splitType: 'settlement',
       isSettlement: true
@@ -448,20 +453,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const exportData = () => {
     const headers = ['Date', 'Description', 'Category', 'Amount', 'Currency', 'Paid By', 'Ledger', 'Split Type'];
     const rows = expenses.map(e => {
-        const ledgerName = ledgers.find(l => l.id === e.ledgerId)?.name || 'Unknown Ledger';
-        const payerName = users.find(u => u.id === e.paidBy)?.name || 'Unknown';
-        const catName = categories.find(c => c.id === e.categoryId)?.name || 'Other';
-        const translatedCat = t(catName);
-        return [
-            new Date(e.date).toISOString().split('T')[0],
-            `"${e.description.replace(/"/g, '""')}"`,
-            translatedCat,
-            e.amount,
-            e.currency,
-            payerName,
-            ledgerName,
-            e.splitType
-        ].join(',');
+      const ledgerName = ledgers.find(l => l.id === e.ledgerId)?.name || 'Unknown Ledger';
+      const payerName = users.find(u => u.id === e.paidBy)?.name || 'Unknown';
+      const catName = categories.find(c => c.id === e.categoryId)?.name || 'Other';
+      const translatedCat = t(catName);
+      return [
+        new Date(e.date).toISOString().split('T')[0],
+        `"${e.description.replace(/"/g, '""')}"`,
+        translatedCat,
+        e.amount,
+        e.currency,
+        payerName,
+        ledgerName,
+        e.splitType
+      ].join(',');
     });
     const csvContent = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -496,7 +501,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     hideConfirm,
     setActiveLedger,
     addLedger,
-    updateLedger, 
+    updateLedger,
     addUser,
     deleteUser,
     addExpense,
