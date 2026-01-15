@@ -1,0 +1,5 @@
+{
+  "name": "OurLedger",
+  "description": "A minimalist, mobile-first expense sharing app for couples. Features multiple ledgers (daily & trips), flexible split logic, and warm aesthetics.",
+  "requestFramePermissions": []
+}
