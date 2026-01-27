@@ -47,6 +47,8 @@ export interface Expense {
   notes?: string;
   receiptImage?: string; // Base64 string or URL
   splits?: Record<string, number>; // Map of UserId -> Value (Percentage or Amount)
+  tags?: string[]; // User-defined tags for flexible categorization
+  isPinned?: boolean; // Pinned as a template for quick reuse
 }
 
 export interface AppNotification {

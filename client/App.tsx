@@ -17,6 +17,7 @@ const MainContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>(undefined);
+  const [templateExpense, setTemplateExpense] = useState<Expense | undefined>(undefined);
   const { darkMode } = useAppStore();
 
   const handleTabChange = (tab: Tab) => {
@@ -36,26 +37,36 @@ const MainContent: React.FC = () => {
   const handleCloseModal = () => {
     setShowAddModal(false);
     // Delay clearing the edit state slightly so the modal doesn't flash content changes while closing
-    setTimeout(() => setEditingExpense(undefined), 300);
+    setTimeout(() => {
+      setEditingExpense(undefined);
+      setTemplateExpense(undefined);
+    }, 300);
+  };
+
+  // Handle using a pinned expense as template (creates new expense, not edit)
+  const handleUseTemplate = (expense: Expense) => {
+    setEditingExpense(undefined);
+    setTemplateExpense({ ...expense, id: '' }); // Clear ID to create new expense
+    setShowAddModal(true);
   };
 
   return (
     // Apply dark class here based on store state
     <div className={`${darkMode ? 'dark' : ''}`}>
       <div className="min-h-screen bg-milk-100 dark:bg-stone-950 font-sans text-stone-900 dark:text-stone-100 selection:bg-clay-400 selection:text-white transition-colors flex overflow-hidden">
-        
+
         <ToastContainer />
         <ConfirmDialog />
-        
+
         {/* Desktop Sidebar */}
-        <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+        <Sidebar activeTab={activeTab} onTabChange={handleTabChange} onUseTemplate={handleUseTemplate} />
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col relative h-screen bg-milk-50 dark:bg-stone-950 shadow-2xl overflow-hidden rounded-l-[0] md:rounded-l-[2.5rem] transition-all duration-300">
-          
+
           {/* Dynamic Header (Sticky Top) */}
           <div className="shrink-0 z-20">
-             {activeTab === 'home' && <LedgerHeader />}
+            {activeTab === 'home' && <LedgerHeader />}
           </div>
 
           {/* Scrollable Body */}
@@ -66,9 +77,9 @@ const MainContent: React.FC = () => {
                   <TransactionList onEdit={handleEditExpense} />
                 </div>
               )}
-              
+
               {activeTab === 'stats' && <StatsView />}
-              
+
               {activeTab === 'settings' && <SettingsView />}
 
               {activeTab === 'transfer' && <TransferView />}
@@ -80,9 +91,9 @@ const MainContent: React.FC = () => {
 
           {/* Modals */}
           {showAddModal && (
-            <AddExpense 
-              onClose={handleCloseModal} 
-              initialExpense={editingExpense} 
+            <AddExpense
+              onClose={handleCloseModal}
+              initialExpense={editingExpense || templateExpense}
             />
           )}
         </div>

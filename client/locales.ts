@@ -135,6 +135,31 @@ export const translations = {
     confirmTransfer: "Confirm Transfer",
     from: "From (Payer)",
     to: "To (Receiver)",
+    // Tags
+    tags: "Tags",
+    addTag: "Add tag...",
+    popularTags: "Popular Tags",
+    // Quick Date
+    today: "Today",
+    yesterday: "Yesterday",
+    dayBeforeYesterday: "2 days ago",
+    // Quick Stats
+    thisWeek: "This Week",
+    lastWeek: "Last Week",
+    vsLastWeek: "vs last week",
+    // Pinned Expenses
+    pinnedExpenses: "Templates",
+    pinExpense: "Save as Template",
+    unpinExpense: "Remove Template",
+    useTemplate: "Use Template",
+    noPinnedExpenses: "No templates yet.",
+    longPressToPin: "Long press any expense to save as template.",
+    // Notifications
+    enableReminders: "Daily Reminder",
+    reminderTime: "Reminder Time",
+    reminderEnabled: "Reminder Enabled",
+    reminderDisabled: "Reminder Disabled",
+    reminderMessage: "Don't forget to track your expenses today! 📝",
   },
   zh: {
     appTitle: '共同帳本',
@@ -270,5 +295,30 @@ export const translations = {
     confirmTransfer: "確認轉帳",
     from: "從 (付款)",
     to: "給 (收款)",
+    // Tags
+    tags: "標籤",
+    addTag: "新增標籤...",
+    popularTags: "常用標籤",
+    // Quick Date
+    today: "今天",
+    yesterday: "昨天",
+    dayBeforeYesterday: "前天",
+    // Quick Stats
+    thisWeek: "本週",
+    lastWeek: "上週",
+    vsLastWeek: "對比上週",
+    // Pinned Expenses
+    pinnedExpenses: "常用範本",
+    pinExpense: "儲存為範本",
+    unpinExpense: "移除範本",
+    useTemplate: "套用範本",
+    noPinnedExpenses: "尚無範本",
+    longPressToPin: "長按任一筆支出可儲存為範本。",
+    // Notifications
+    enableReminders: "每日提醒",
+    reminderTime: "提醒時間",
+    reminderEnabled: "已開啟提醒",
+    reminderDisabled: "已關閉提醒",
+    reminderMessage: "別忘了記錄今天的支出！📝",
   }
 };

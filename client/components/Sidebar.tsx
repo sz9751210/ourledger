@@ -1,14 +1,16 @@
 import React from 'react';
 import { Home, PieChart, Settings, Plus, Wallet, ArrowRightLeft } from 'lucide-react';
-import { Tab } from '../types';
+import { Tab, Expense } from '../types';
 import { useAppStore } from '../services/store';
+import { PinnedExpenses } from './PinnedExpenses';
 
 interface SidebarProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
+  onUseTemplate?: (expense: Expense) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, onUseTemplate }) => {
   const { t, currentUser } = useAppStore();
 
   const NavItem = ({ tab, icon: Icon, label }: { tab: Tab, icon: any, label: string }) => {
@@ -16,11 +18,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
     return (
       <button
         onClick={() => onTabChange(tab)}
-        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-          isActive 
-            ? 'bg-stone-800 text-white shadow-md dark:bg-stone-100 dark:text-stone-900' 
+        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
+            ? 'bg-stone-800 text-white shadow-md dark:bg-stone-100 dark:text-stone-900'
             : 'text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800'
-        }`}
+          }`}
       >
         <Icon size={20} className={isActive ? 'text-white dark:text-stone-900' : 'text-stone-400 group-hover:text-stone-600 dark:text-stone-500'} />
         <span className="font-bold text-sm">{label}</span>
@@ -33,7 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       {/* Brand */}
       <div className="flex items-center space-x-3 mb-10 px-2">
         <div className="w-10 h-10 bg-gradient-to-br from-stone-800 to-stone-600 dark:from-stone-100 dark:to-stone-400 rounded-xl flex items-center justify-center text-white dark:text-stone-900 shadow-lg">
-           <Wallet size={20} />
+          <Wallet size={20} />
         </div>
         <h1 className="text-xl font-extrabold text-stone-800 dark:text-stone-100 tracking-tight">{t('appTitle')}</h1>
       </div>
@@ -41,10 +42,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       {/* Navigation */}
       <div className="space-y-2 flex-1">
         <NavItem tab="home" icon={Home} label={t('ledger')} />
-        <NavItem tab="transfer" icon={ArrowRightLeft} label={t('transfer', {defaultValue: 'Transfer'})} />
+        <NavItem tab="transfer" icon={ArrowRightLeft} label={t('transfer', { defaultValue: 'Transfer' })} />
         <NavItem tab="stats" icon={PieChart} label={t('stats')} />
         <NavItem tab="settings" icon={Settings} label={t('settings')} />
       </div>
+
+      {/* Pinned Expenses / Templates */}
+      {onUseTemplate && (
+        <div className="mb-4">
+          <PinnedExpenses onUseTemplate={onUseTemplate} />
+        </div>
+      )}
 
       {/* Quick Add Button */}
       <button

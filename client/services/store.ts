@@ -47,6 +47,7 @@ interface AppState {
   addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
   updateExpense: (expense: Expense) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
+  togglePinExpense: (id: string) => Promise<void>;
   addCategory: (category: Omit<Category, 'id'>) => Promise<string | void>;
   updateCategory: (id: string, updates: Partial<Category>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
@@ -205,7 +206,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-    const deleteLedger = async (id: string) => {
+  const deleteLedger = async (id: string) => {
     // 防止刪除最後一本帳本，避免畫面壞掉
     if (ledgers.length <= 1) {
       addNotification(t('error'), t('cannotDeleteLastLedger', { defaultValue: 'Cannot delete the last ledger' }), 'info');
@@ -214,7 +215,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     try {
       await api.deleteLedger(id);
-      
+
       // 更新列表
       const newLedgers = ledgers.filter(l => l.id !== id);
       setLedgers(newLedgers);
@@ -332,6 +333,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addNotification(t('expenseDeleted'), t('deleted'), 'info');
     } catch (err) {
       addNotification(t('error'), 'Failed to delete expense', 'info');
+    }
+  };
+
+  const togglePinExpense = async (id: string) => {
+    const expense = expenses.find(e => e.id === id);
+    if (!expense) return;
+
+    const updatedExpense = { ...expense, isPinned: !expense.isPinned };
+    try {
+      const res = await api.updateExpense(id, updatedExpense);
+      setExpenses(prev => prev.map(e => e.id === id ? res.data : e));
+      addNotification(
+        updatedExpense.isPinned ? t('pinExpense') : t('unpinExpense'),
+        updatedExpense.isPinned ? t('pinExpense') : t('unpinExpense'),
+        'success'
+      );
+    } catch (err) {
+      addNotification(t('error'), 'Failed to update expense', 'info');
     }
   };
 
@@ -534,6 +553,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addExpense,
     updateExpense,
     deleteExpense,
+    togglePinExpense,
     addCategory,
     updateCategory,
     deleteCategory,
