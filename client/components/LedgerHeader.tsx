@@ -4,7 +4,7 @@ import { useAppStore } from '../services/store';
 import { AVAILABLE_COLORS } from '../constants';
 
 export const LedgerHeader: React.FC = () => {
-  const { activeLedgerId, ledgers, setActiveLedger, calculateBalance, settleUp, addLedger, updateLedger, activeLedgerMembers, currentUser, users, addUser, deleteUser, baseCurrency, deleteLedger, showConfirm, t } = useAppStore();
+  const { activeLedgerId, ledgers, setActiveLedger, calculateBalance, settleUp, addLedger, updateLedger, activeLedgerMembers, currentUser, users, addUser, deleteUser, baseCurrency, deleteLedger, showConfirm, isLoading, t } = useAppStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isManagingMembers, setIsManagingMembers] = useState(false);
@@ -169,7 +169,7 @@ export const LedgerHeader: React.FC = () => {
             onClick={toggleMenu}
             className="inline-flex items-center space-x-2 bg-milk-100 dark:bg-stone-800 px-4 py-1.5 rounded-full text-stone-600 dark:text-stone-300 font-bold text-sm tracking-wide hover:bg-milk-200 dark:hover:bg-stone-700 transition-colors"
           >
-            <span>{activeLedger?.name || 'Loading...'}</span>
+            <span>{activeLedger?.name || (isLoading ? 'Loading...' : t('noLedger'))}</span>
             <ChevronDown size={14} className={`transform transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
           </button>
           {/* Dropdown Menu */}

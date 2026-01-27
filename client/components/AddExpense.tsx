@@ -24,6 +24,7 @@ export const AddExpense: React.FC<AddExpenseProps> = ({ onClose, initialExpense 
     baseCurrency,
     categories,
     showConfirm,
+    togglePinExpense,
     t
   } = useAppStore();
 
@@ -272,8 +273,8 @@ export const AddExpense: React.FC<AddExpenseProps> = ({ onClose, initialExpense 
       type="button"
       onClick={() => handleSplitTypeSelect(type)}
       className={`py - 3 px - 2 text - xs font - bold rounded - xl border transition - all whitespace - nowrap flex - 1 ${active
-          ? 'bg-stone-800 text-white border-stone-800 shadow-md dark:bg-stone-100 dark:text-stone-900'
-          : 'bg-white text-stone-500 border-stone-200 hover:bg-stone-50 dark:bg-stone-800 dark:text-stone-400 dark:border-stone-700 dark:hover:bg-stone-700'
+        ? 'bg-stone-800 text-white border-stone-800 shadow-md dark:bg-stone-100 dark:text-stone-900'
+        : 'bg-white text-stone-500 border-stone-200 hover:bg-stone-50 dark:bg-stone-800 dark:text-stone-400 dark:border-stone-700 dark:hover:bg-stone-700'
         } `}
     >
       {label}
@@ -299,13 +300,26 @@ export const AddExpense: React.FC<AddExpenseProps> = ({ onClose, initialExpense 
           </h2>
           <div className="flex items-center gap-2">
             {!isCreatingCategory && initialExpense && (
-              <button
-                onClick={handleDelete}
-                className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors"
-                title={t('deleted')}
-              >
-                <Trash2 size={20} />
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => togglePinExpense(initialExpense.id)}
+                  className={`p-2 rounded-full transition-colors ${initialExpense.isPinned
+                      ? 'bg-amber-100 text-amber-600 hover:bg-amber-200'
+                      : 'bg-stone-100 text-stone-400 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700'
+                    }`}
+                  title={initialExpense.isPinned ? t('unpinExpense') : t('pinExpense')}
+                >
+                  <Pin size={20} className={initialExpense.isPinned ? 'fill-current' : ''} />
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors"
+                  title={t('deleted')}
+                >
+                  <Trash2 size={20} />
+                </button>
+              </>
             )}
             <button onClick={onClose} className="p-2 bg-stone-100 dark:bg-stone-800 rounded-full text-stone-500 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors">
               <X size={20} />
@@ -403,8 +417,8 @@ export const AddExpense: React.FC<AddExpenseProps> = ({ onClose, initialExpense 
                               type="button"
                               onClick={() => setDate(val)}
                               className={`flex - 1 py - 1.5 px - 2 text - [10px] font - bold rounded - lg border transition - all ${date === val
-                                  ? 'bg-stone-800 text-white border-stone-800 dark:bg-stone-100 dark:text-stone-900'
-                                  : 'bg-white dark:bg-stone-800 text-stone-500 border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-700'
+                                ? 'bg-stone-800 text-white border-stone-800 dark:bg-stone-100 dark:text-stone-900'
+                                : 'bg-white dark:bg-stone-800 text-stone-500 border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-700'
                                 } `}
                             >
                               {label}
@@ -429,8 +443,8 @@ export const AddExpense: React.FC<AddExpenseProps> = ({ onClose, initialExpense 
                             type="button"
                             onClick={() => setCategory(cat)}
                             className={`px - 3 py - 2 rounded - xl text - xs font - bold transition - all border flex items - center gap - 1.5 ${category.id === cat.id
-                                ? `${cat.color} border-current ring-2 ring-stone-100 dark:ring-stone-800`
-                                : 'bg-milk-50 dark:bg-stone-900 text-stone-500 border-stone-100 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800'
+                              ? `${cat.color} border-current ring-2 ring-stone-100 dark:ring-stone-800`
+                              : 'bg-milk-50 dark:bg-stone-900 text-stone-500 border-stone-100 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800'
                               } `}
                           >
                             {Icon ? <Icon size={14} /> : null}
@@ -571,8 +585,8 @@ export const AddExpense: React.FC<AddExpenseProps> = ({ onClose, initialExpense 
                         type="button"
                         onClick={() => setPaidBy(member.id)}
                         className={`flex items - center justify - center gap - 2 py - 3 px - 3 rounded - xl text - sm font - bold transition - all ${paidBy === member.id
-                            ? 'bg-white dark:bg-stone-800 border-2 border-stone-800 dark:border-stone-100 text-stone-800 dark:text-white shadow-sm'
-                            : 'bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-500'
+                          ? 'bg-white dark:bg-stone-800 border-2 border-stone-800 dark:border-stone-100 text-stone-800 dark:text-white shadow-sm'
+                          : 'bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-500'
                           } `}
                       >
                         <div className={`w - 2 h - 2 rounded - full ${member.color.replace('text-', 'bg-').split(' ')[0]} `}></div>
@@ -609,8 +623,8 @@ export const AddExpense: React.FC<AddExpenseProps> = ({ onClose, initialExpense 
                             type="button"
                             onClick={() => setBeneficiaryId(member.id)}
                             className={`px - 4 py - 2 rounded - lg text - xs font - bold border transition - all ${beneficiaryId === member.id
-                                ? 'bg-stone-800 text-white border-stone-800 dark:bg-stone-100 dark:text-stone-900'
-                                : 'bg-stone-50 dark:bg-stone-900 text-stone-500 border-stone-200 dark:border-stone-700'
+                              ? 'bg-stone-800 text-white border-stone-800 dark:bg-stone-100 dark:text-stone-900'
+                              : 'bg-stone-50 dark:bg-stone-900 text-stone-500 border-stone-200 dark:border-stone-700'
                               } `}
                           >
                             {member.name}
@@ -727,8 +741,8 @@ export const AddExpense: React.FC<AddExpenseProps> = ({ onClose, initialExpense 
                           onClick={() => setNewCatIcon(iconName)}
                           title={iconName}
                           className={`p - 2 rounded - xl flex items - center justify - center transition - all aspect - square ${newCatIcon === iconName
-                              ? 'bg-stone-800 text-white dark:bg-stone-100 dark:text-stone-900 shadow-md'
-                              : 'bg-milk-50 dark:bg-stone-900 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 border border-transparent hover:border-stone-200'
+                            ? 'bg-stone-800 text-white dark:bg-stone-100 dark:text-stone-900 shadow-md'
+                            : 'bg-milk-50 dark:bg-stone-900 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 border border-transparent hover:border-stone-200'
                             } `}
                         >
                           {Icon ? <Icon size={20} /> : <div className="w-5 h-5" />}
