@@ -2,7 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Category, Expense, CurrencyCode } from "../types";
 
 // Initialize the Google GenAI client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 /**
  * Suggests a category ID based on the expense description.
@@ -12,7 +12,7 @@ export const getCategorySuggestion = async (description: string, categories: Cat
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-1.5-flash',
       contents: `Analyze the expense description: "${description}".
       Select the most appropriate category ID from the following list.
       Categories: ${JSON.stringify(categories.map(c => ({ id: c.id, name: c.name })))}`,
@@ -65,7 +65,7 @@ export const parseReceiptImage = async (
     Return JSON.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-latest',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: [
           { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
@@ -125,7 +125,7 @@ export const getSpendingInsights = async (expenses: Expense[], currency: string,
          ${expenseSummary}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-1.5-flash',
       contents: prompt,
       config: {
         systemInstruction: "You are a helpful personal finance assistant for a couple.",
