@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, PieChart, Settings, Plus, Wallet } from 'lucide-react';
+import { Home, PieChart, Settings, Plus, Wallet, ArrowRightLeft } from 'lucide-react';
 import { Tab } from '../types';
 import { useAppStore } from '../services/store';
 
@@ -41,6 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       {/* Navigation */}
       <div className="space-y-2 flex-1">
         <NavItem tab="home" icon={Home} label={t('ledger')} />
+        <NavItem tab="transfer" icon={ArrowRightLeft} label={t('transfer', {defaultValue: 'Transfer'})} />
         <NavItem tab="stats" icon={PieChart} label={t('stats')} />
         <NavItem tab="settings" icon={Settings} label={t('settings')} />
       </div>

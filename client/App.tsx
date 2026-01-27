@@ -10,6 +10,7 @@ import { SettingsView } from './components/SettingsView';
 import { ToastContainer } from './components/Toast';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { Tab, Expense } from './types';
+import { TransferView } from './components/TransferView';
 
 // Main content component to use Store context
 const MainContent: React.FC = () => {
@@ -69,6 +70,8 @@ const MainContent: React.FC = () => {
               {activeTab === 'stats' && <StatsView />}
               
               {activeTab === 'settings' && <SettingsView />}
+
+              {activeTab === 'transfer' && <TransferView />}
             </div>
           </main>
 

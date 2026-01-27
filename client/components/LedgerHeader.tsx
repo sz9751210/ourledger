@@ -72,7 +72,7 @@ export const LedgerHeader: React.FC = () => {
 
     showConfirm(
       t('delete'),
-      t('confirmDeleteLedger', { name: ledgerName, defaultValue: `Delete ledger "${ledgerName}" and all its expenses?` }),
+      t('confirmDeleteLedger', { name: ledgerName }),
       async () => {
         await deleteLedger(ledgerId);
         // 如果刪除的是當前選單打開的，雖然 Store 會自動切換，但我們可以手動關閉選單讓體驗更好

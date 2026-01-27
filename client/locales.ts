@@ -128,6 +128,13 @@ export const translations = {
     cat_Entertainment: 'Entertainment',
     cat_Housing: 'Housing',
     cat_Other: 'Other',
+    transfer: "Transfer",
+    transferMoney: "Transfer / Repayment",
+    transferSuccess: "Transfer Successful",
+    makeAnother: "Make another transfer",
+    confirmTransfer: "Confirm Transfer",
+    from: "From (Payer)",
+    to: "To (Receiver)",
   },
   zh: {
     appTitle: '共同帳本',
@@ -256,5 +263,12 @@ export const translations = {
     cat_Entertainment: '娛樂',
     cat_Housing: '居住',
     cat_Other: '其他',
+    transfer: "轉帳",
+    transferMoney: "轉帳 / 還款",
+    transferSuccess: "轉帳成功",
+    makeAnother: "再記一筆",
+    confirmTransfer: "確認轉帳",
+    from: "從 (付款)",
+    to: "給 (收款)",
   }
 };

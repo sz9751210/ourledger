@@ -57,4 +57,4 @@ export interface AppNotification {
 }
 
 // Navigation Types
-export type Tab = 'home' | 'add' | 'stats' | 'settings';
+export type Tab = 'home' | 'stats' | 'settings' | 'add' | 'transfer';
