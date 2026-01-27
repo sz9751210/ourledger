@@ -1,14 +1,25 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Category, Expense, CurrencyCode } from "../types";
 
-// Initialize the Google GenAI client
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+// Initialize the Google GenAI client conditionally
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+let ai: GoogleGenAI | null = null;
+
+if (apiKey && apiKey !== 'PLACEHOLDER_API_KEY') {
+  try {
+    ai = new GoogleGenAI({ apiKey });
+  } catch (error) {
+    console.warn("Failed to initialize Gemini AI client:", error);
+  }
+} else {
+  console.log("No valid Gemini API Key found. AI features are disabled.");
+}
 
 /**
  * Suggests a category ID based on the expense description.
  */
 export const getCategorySuggestion = async (description: string, categories: Category[]): Promise<string | undefined> => {
-  if (!description.trim()) return undefined;
+  if (!ai || !description.trim()) return undefined;
 
   try {
     const response = await ai.models.generateContent({
@@ -39,8 +50,8 @@ export const getCategorySuggestion = async (description: string, categories: Cat
  * Parses a receipt image to extract expense details.
  */
 export const parseReceiptImage = async (
-  base64Image: string, 
-  categories: Category[], 
+  base64Image: string,
+  categories: Category[],
   baseCurrency: string
 ): Promise<{
   amount?: number;
@@ -49,10 +60,12 @@ export const parseReceiptImage = async (
   description?: string;
   categoryId?: string;
 } | undefined> => {
+  if (!ai) return undefined;
+
   try {
     // Strip header if present (e.g., "data:image/jpeg;base64,")
-    const base64Data = base64Image.includes('base64,') 
-      ? base64Image.split('base64,')[1] 
+    const base64Data = base64Image.includes('base64,')
+      ? base64Image.split('base64,')[1]
       : base64Image;
 
     const prompt = `Analyze this receipt image. Extract the following:
@@ -89,11 +102,11 @@ export const parseReceiptImage = async (
 
     const result = JSON.parse(response.text || '{}');
     return result as {
-       amount?: number;
-       currency?: CurrencyCode;
-       date?: string;
-       description?: string;
-       categoryId?: string;
+      amount?: number;
+      currency?: CurrencyCode;
+      date?: string;
+      description?: string;
+      categoryId?: string;
     };
 
   } catch (error) {
@@ -106,7 +119,7 @@ export const parseReceiptImage = async (
  * Generates spending insights based on recent expenses.
  */
 export const getSpendingInsights = async (expenses: Expense[], currency: string, categories: Category[], language: 'en' | 'zh'): Promise<string> => {
-  if (expenses.length === 0) return "";
+  if (!ai || expenses.length === 0) return "";
 
   const expenseSummary = expenses.map(e => {
     const catName = categories.find(c => c.id === e.categoryId)?.name || 'Unknown';
@@ -114,7 +127,7 @@ export const getSpendingInsights = async (expenses: Expense[], currency: string,
   }).join('\n');
 
   try {
-    const prompt = language === 'zh' 
+    const prompt = language === 'zh'
       ? `作為一位財務顧問，請根據以下近期支出紀錄，提供 3 點簡短的財務分析或省錢建議 (使用繁體中文，語氣親切):
          預設幣別: ${currency}
          紀錄:
