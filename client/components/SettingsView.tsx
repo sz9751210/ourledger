@@ -7,24 +7,25 @@ import { AVAILABLE_ICONS, AVAILABLE_COLORS } from '../constants';
 import * as Icons from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
-  const { 
-    darkMode, toggleDarkMode, 
-    language, setLanguage, 
+  const {
+    darkMode, toggleDarkMode,
+    language, setLanguage,
     baseCurrency, setBaseCurrency,
     categories, addCategory, updateCategory, deleteCategory,
     users, addUser, deleteUser,
     rates, refreshRates,
     monthlyBudget, setMonthlyBudget,
     exportData,
-    showConfirm, t 
+    reminderEnabled, reminderTime, toggleReminder,
+    showConfirm, t
   } = useAppStore();
 
   const currencies: CurrencyCode[] = ['TWD', 'USD', 'JPY', 'EUR', 'KRW'];
-  
+
   // Category State
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
-  
+
   // Form State (Shared for Add/Edit)
   const [catName, setCatName] = useState('');
   const [catIcon, setCatIcon] = useState(AVAILABLE_ICONS[0]);
@@ -35,7 +36,7 @@ export const SettingsView: React.FC = () => {
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserColor, setNewUserColor] = useState(AVAILABLE_COLORS[0]);
-  
+
   // Rate Loading State
   const [isLoadingRates, setIsLoadingRates] = useState(false);
 
@@ -44,7 +45,7 @@ export const SettingsView: React.FC = () => {
 
   const displayedIcons = useMemo(() => {
     if (!iconSearch.trim()) return AVAILABLE_ICONS;
-    
+
     const searchLower = iconSearch.toLowerCase();
     return allIcons.filter(name => name.toLowerCase().includes(searchLower)).slice(0, 100); // Limit results for performance
   }, [iconSearch, allIcons]);
@@ -98,15 +99,15 @@ export const SettingsView: React.FC = () => {
   };
 
   const handleDeleteCategory = (id: string) => {
-     showConfirm(
-       t('delete'),
-       t('confirmDelete'),
-       () => {
-         deleteCategory(id);
-         if (editingCategory?.id === id) resetCategoryForm();
-       },
-       true
-     );
+    showConfirm(
+      t('delete'),
+      t('confirmDelete'),
+      () => {
+        deleteCategory(id);
+        if (editingCategory?.id === id) resetCategoryForm();
+      },
+      true
+    );
   };
 
   const handleAddUser = () => {
@@ -131,7 +132,40 @@ export const SettingsView: React.FC = () => {
       <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100 mb-8">{t('appSettings')}</h2>
 
       <div className="space-y-6">
-        
+
+        {/* Notification Card */}
+        <div className="bg-white dark:bg-stone-900 rounded-2xl p-4 shadow-sm border border-stone-100 dark:border-stone-800">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-full">
+                <Icons.Bell size={20} />
+              </div>
+              <span className="font-bold text-stone-700 dark:text-stone-200">{t('enableReminders')}</span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={reminderEnabled}
+                onChange={(e) => toggleReminder(e.target.checked, reminderTime)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-stone-800"></div>
+            </label>
+          </div>
+
+          {reminderEnabled && (
+            <div className="flex items-center justify-between bg-stone-50 dark:bg-stone-800/50 rounded-xl px-4 py-3 animate-in slide-in-from-top-2 fade-in">
+              <span className="text-sm font-bold text-stone-500">{t('reminderTime')}</span>
+              <input
+                type="time"
+                value={reminderTime}
+                onChange={(e) => toggleReminder(true, e.target.value)}
+                className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-2 py-1 text-sm font-bold text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-stone-400"
+              />
+            </div>
+          )}
+        </div>
+
         {/* Appearance Card */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl p-4 shadow-sm border border-stone-100 dark:border-stone-800">
           <div className="flex items-center justify-between">
@@ -157,13 +191,13 @@ export const SettingsView: React.FC = () => {
             <span className="font-bold text-stone-700 dark:text-stone-200">{t('language')}</span>
           </div>
           <div className="flex bg-milk-100 dark:bg-stone-800 p-1 rounded-xl">
-            <button 
+            <button
               onClick={() => setLanguage('en')}
               className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${language === 'en' ? 'bg-white dark:bg-stone-700 shadow-sm text-stone-900 dark:text-white' : 'text-stone-400'}`}
             >
               English
             </button>
-            <button 
+            <button
               onClick={() => setLanguage('zh')}
               className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${language === 'zh' ? 'bg-white dark:bg-stone-700 shadow-sm text-stone-900 dark:text-white' : 'text-stone-400'}`}
             >
@@ -174,56 +208,55 @@ export const SettingsView: React.FC = () => {
 
         {/* Monthly Budget Card */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl p-4 shadow-sm border border-stone-100 dark:border-stone-800">
-           <div className="flex items-center space-x-3 mb-3">
-             <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full">
-               <Target size={20} />
-             </div>
-             <span className="font-bold text-stone-700 dark:text-stone-200">{t('monthlyBudget')}</span>
-           </div>
-           <div className="flex items-center space-x-3">
-              <div className="flex-1 relative">
-                 <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-stone-400">{baseCurrency}</span>
-                 <input 
-                   type="number"
-                   value={monthlyBudget}
-                   onChange={(e) => setMonthlyBudget(Number(e.target.value))}
-                   className="w-full bg-stone-50 dark:bg-stone-800 rounded-xl pl-16 pr-4 py-3 font-bold text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-stone-200 dark:focus:ring-stone-700"
-                 />
-              </div>
-           </div>
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full">
+              <Target size={20} />
+            </div>
+            <span className="font-bold text-stone-700 dark:text-stone-200">{t('monthlyBudget')}</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="flex-1 relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-stone-400">{baseCurrency}</span>
+              <input
+                type="number"
+                value={monthlyBudget}
+                onChange={(e) => setMonthlyBudget(Number(e.target.value))}
+                className="w-full bg-stone-50 dark:bg-stone-800 rounded-xl pl-16 pr-4 py-3 font-bold text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-stone-200 dark:focus:ring-stone-700"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Export Data */}
-        <button 
+        <button
           onClick={exportData}
           className="w-full bg-white dark:bg-stone-900 rounded-2xl p-4 shadow-sm border border-stone-100 dark:border-stone-800 flex items-center justify-between group hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
         >
           <div className="flex items-center space-x-3">
-             <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full group-hover:bg-indigo-200 transition-colors">
-               <FileDown size={20} />
-             </div>
-             <span className="font-bold text-stone-700 dark:text-stone-200">{t('exportData')}</span>
+            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full group-hover:bg-indigo-200 transition-colors">
+              <FileDown size={20} />
+            </div>
+            <span className="font-bold text-stone-700 dark:text-stone-200">{t('exportData')}</span>
           </div>
         </button>
 
         {/* Currency Card */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl p-4 shadow-sm border border-stone-100 dark:border-stone-800">
           <div className="flex items-center space-x-3 mb-3">
-             <div className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
-               <Coins size={20} />
-             </div>
-             <span className="font-bold text-stone-700 dark:text-stone-200">{t('baseCurrency')}</span>
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
+              <Coins size={20} />
+            </div>
+            <span className="font-bold text-stone-700 dark:text-stone-200">{t('baseCurrency')}</span>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {currencies.map(c => (
               <button
                 key={c}
                 onClick={() => setBaseCurrency(c)}
-                className={`py-2 rounded-lg text-sm font-bold border transition-all ${
-                  baseCurrency === c 
-                    ? 'bg-stone-800 text-white border-stone-800 dark:bg-stone-100 dark:text-stone-900' 
-                    : 'bg-transparent text-stone-500 border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800'
-                }`}
+                className={`py-2 rounded-lg text-sm font-bold border transition-all ${baseCurrency === c
+                  ? 'bg-stone-800 text-white border-stone-800 dark:bg-stone-100 dark:text-stone-900'
+                  : 'bg-transparent text-stone-500 border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800'
+                  }`}
               >
                 {c}
               </button>
@@ -234,22 +267,22 @@ export const SettingsView: React.FC = () => {
         {/* Exchange Rates Card */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl p-4 shadow-sm border border-stone-100 dark:border-stone-800">
           <div className="flex items-center justify-between mb-3">
-             <div className="flex items-center space-x-3">
-               <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 rounded-full">
-                 <TrendingUp size={20} />
-               </div>
-               <span className="font-bold text-stone-700 dark:text-stone-200">{t('exchangeRates')}</span>
-             </div>
-             <button 
-                onClick={handleRefreshRates}
-                disabled={isLoadingRates}
-                className="p-1.5 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors disabled:opacity-50"
-                title={t('refresh')}
-              >
-                <RefreshCw size={16} className={isLoadingRates ? 'animate-spin' : ''} />
-              </button>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 rounded-full">
+                <TrendingUp size={20} />
+              </div>
+              <span className="font-bold text-stone-700 dark:text-stone-200">{t('exchangeRates')}</span>
+            </div>
+            <button
+              onClick={handleRefreshRates}
+              disabled={isLoadingRates}
+              className="p-1.5 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors disabled:opacity-50"
+              title={t('refresh')}
+            >
+              <RefreshCw size={16} className={isLoadingRates ? 'animate-spin' : ''} />
+            </button>
           </div>
-          
+
           <div className="space-y-2">
             {currencies
               .filter(c => c !== baseCurrency)
@@ -269,32 +302,32 @@ export const SettingsView: React.FC = () => {
                     </div>
                   </div>
                 );
-            })}
+              })}
           </div>
         </div>
 
         {/* Manage Users */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl p-4 shadow-sm border border-stone-100 dark:border-stone-800">
           <div className="flex items-center justify-between mb-3">
-             <div className="flex items-center space-x-3">
-               <div className="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full">
-                 <Users size={20} />
-               </div>
-               <span className="font-bold text-stone-700 dark:text-stone-200">{t('manageUsers')}</span>
-             </div>
-             {!isAddingUser && (
-                <button 
-                  onClick={() => setIsAddingUser(true)}
-                  className="p-1.5 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700"
-                >
-                  <Plus size={18} />
-                </button>
-             )}
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full">
+                <Users size={20} />
+              </div>
+              <span className="font-bold text-stone-700 dark:text-stone-200">{t('manageUsers')}</span>
+            </div>
+            {!isAddingUser && (
+              <button
+                onClick={() => setIsAddingUser(true)}
+                className="p-1.5 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700"
+              >
+                <Plus size={18} />
+              </button>
+            )}
           </div>
 
           {isAddingUser ? (
-             <div className="bg-stone-50 dark:bg-stone-950 p-4 rounded-xl space-y-4 animate-in fade-in slide-in-from-top-2 border border-stone-100 dark:border-stone-800">
-               <div className="space-y-1">
+            <div className="bg-stone-50 dark:bg-stone-950 p-4 rounded-xl space-y-4 animate-in fade-in slide-in-from-top-2 border border-stone-100 dark:border-stone-800">
+              <div className="space-y-1">
                 <label className="text-xs font-bold text-stone-400 ml-1">{t('userName')}</label>
                 <input
                   type="text"
@@ -312,9 +345,8 @@ export const SettingsView: React.FC = () => {
                     <button
                       key={colorClass}
                       onClick={() => setNewUserColor(colorClass)}
-                      className={`h-8 rounded-lg transition-all relative ${colorClass} ${
-                        newUserColor === colorClass ? 'ring-2 ring-stone-800 dark:ring-white ring-offset-2 dark:ring-offset-stone-900' : 'opacity-70 hover:opacity-100'
-                      }`}
+                      className={`h-8 rounded-lg transition-all relative ${colorClass} ${newUserColor === colorClass ? 'ring-2 ring-stone-800 dark:ring-white ring-offset-2 dark:ring-offset-stone-900' : 'opacity-70 hover:opacity-100'
+                        }`}
                     >
                       {newUserColor === colorClass && <Check size={12} className="absolute inset-0 m-auto" />}
                     </button>
@@ -322,13 +354,13 @@ export const SettingsView: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
-                <button 
+                <button
                   onClick={() => setIsAddingUser(false)}
                   className="flex-1 py-2 rounded-lg text-xs font-bold text-stone-500 hover:bg-stone-200 dark:hover:bg-stone-800"
                 >
                   {t('cancel')}
                 </button>
-                <button 
+                <button
                   onClick={handleAddUser}
                   disabled={!newUserName.trim()}
                   className="flex-1 py-2 rounded-lg text-xs font-bold bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 shadow-md disabled:opacity-50"
@@ -336,11 +368,11 @@ export const SettingsView: React.FC = () => {
                   {t('createUser')}
                 </button>
               </div>
-             </div>
+            </div>
           ) : (
             <div className="flex flex-wrap gap-2">
               {users.map(u => (
-                <div 
+                <div
                   key={u.id}
                   className={`group relative pr-7 px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-2 ${u.color} border-current opacity-90`}
                 >
@@ -348,13 +380,13 @@ export const SettingsView: React.FC = () => {
                     <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
                   </div>
                   {u.name}
-                  <button 
-                     onClick={() => handleDeleteUser(u.id)}
-                     className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-black/10 transition-colors"
-                     title="Delete"
-                   >
-                     <X size={12} />
-                   </button>
+                  <button
+                    onClick={() => handleDeleteUser(u.id)}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-black/10 transition-colors"
+                    title="Delete"
+                  >
+                    <X size={12} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -364,20 +396,20 @@ export const SettingsView: React.FC = () => {
         {/* Manage Categories */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl p-4 shadow-sm border border-stone-100 dark:border-stone-800">
           <div className="flex items-center justify-between mb-3">
-             <div className="flex items-center space-x-3">
-               <div className="p-2 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full">
-                 <Layers size={20} />
-               </div>
-               <span className="font-bold text-stone-700 dark:text-stone-200">{t('manageCategories')}</span>
-             </div>
-             {!isAddingCategory && (
-                <button 
-                  onClick={startAddCategory}
-                  className="p-1.5 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700"
-                >
-                  <Plus size={18} />
-                </button>
-             )}
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full">
+                <Layers size={20} />
+              </div>
+              <span className="font-bold text-stone-700 dark:text-stone-200">{t('manageCategories')}</span>
+            </div>
+            {!isAddingCategory && (
+              <button
+                onClick={startAddCategory}
+                className="p-1.5 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700"
+              >
+                <Plus size={18} />
+              </button>
+            )}
           </div>
 
           {isAddingCategory ? (
@@ -407,11 +439,11 @@ export const SettingsView: React.FC = () => {
                   {t('selectIcon')}
                   <span className="text-stone-300 dark:text-stone-600 font-normal">{catIcon}</span>
                 </label>
-                
+
                 {/* Icon Search */}
                 <div className="relative mb-2">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                  <input 
+                  <input
                     type="text"
                     value={iconSearch}
                     onChange={(e) => setIconSearch(e.target.value)}
@@ -427,11 +459,10 @@ export const SettingsView: React.FC = () => {
                       <button
                         key={iconName}
                         onClick={() => setCatIcon(iconName)}
-                        className={`p-2 rounded-lg flex items-center justify-center transition-all aspect-square ${
-                          catIcon === iconName
-                            ? 'bg-stone-800 text-white dark:bg-stone-100 dark:text-stone-900 shadow-md'
-                            : 'bg-white dark:bg-stone-900 text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-800'
-                        }`}
+                        className={`p-2 rounded-lg flex items-center justify-center transition-all aspect-square ${catIcon === iconName
+                          ? 'bg-stone-800 text-white dark:bg-stone-100 dark:text-stone-900 shadow-md'
+                          : 'bg-white dark:bg-stone-900 text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-800'
+                          }`}
                         title={iconName}
                       >
                         {Icon ? <Icon size={20} /> : <div className="w-5 h-5 bg-red-200" />}
@@ -448,9 +479,8 @@ export const SettingsView: React.FC = () => {
                     <button
                       key={colorClass}
                       onClick={() => setCatColor(colorClass)}
-                      className={`h-8 rounded-lg transition-all relative ${colorClass} ${
-                        catColor === colorClass ? 'ring-2 ring-stone-800 dark:ring-white ring-offset-2 dark:ring-offset-stone-900' : 'opacity-70 hover:opacity-100'
-                      }`}
+                      className={`h-8 rounded-lg transition-all relative ${colorClass} ${catColor === colorClass ? 'ring-2 ring-stone-800 dark:ring-white ring-offset-2 dark:ring-offset-stone-900' : 'opacity-70 hover:opacity-100'
+                        }`}
                     >
                       {catColor === colorClass && <Check size={12} className="absolute inset-0 m-auto" />}
                     </button>
@@ -459,13 +489,13 @@ export const SettingsView: React.FC = () => {
               </div>
 
               <div className="flex gap-2 pt-2">
-                <button 
+                <button
                   onClick={resetCategoryForm}
                   className="flex-1 py-2 rounded-lg text-xs font-bold text-stone-500 hover:bg-stone-200 dark:hover:bg-stone-800"
                 >
                   {t('cancel')}
                 </button>
-                <button 
+                <button
                   onClick={handleSaveCategory}
                   disabled={!catName.trim()}
                   className="flex-1 py-2 rounded-lg text-xs font-bold bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 shadow-md disabled:opacity-50"
@@ -477,16 +507,16 @@ export const SettingsView: React.FC = () => {
           ) : (
             <div className="flex flex-wrap gap-2">
               {categories.map(cat => (
-                <button 
+                <button
                   key={cat.id}
                   onClick={() => startEditCategory(cat)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-2 ${cat.color} border-current opacity-90 hover:opacity-100 transition-opacity`}
                 >
-                   {React.createElement((Icons as any)[cat.icon] || Icons.HelpCircle, { size: 14 })}
-                   {t(cat.name)}
-                   <div className="w-4 h-4 rounded-full bg-black/5 flex items-center justify-center ml-1">
-                     <Edit3 size={8} className="opacity-50" />
-                   </div>
+                  {React.createElement((Icons as any)[cat.icon] || Icons.HelpCircle, { size: 14 })}
+                  {t(cat.name)}
+                  <div className="w-4 h-4 rounded-full bg-black/5 flex items-center justify-center ml-1">
+                    <Edit3 size={8} className="opacity-50" />
+                  </div>
                 </button>
               ))}
             </div>

@@ -3,6 +3,7 @@ import { Expense, Ledger, User, AppNotification, CurrencyCode, Category } from '
 import { DEFAULT_CATEGORIES } from '../constants'; // 假如後端是空的，可以用這個當預設值
 import { Language, translations } from '../locales';
 import * as api from './api'; // 引入剛剛建立的 API
+import { NotificationService } from './NotificationService';
 
 interface AppState {
   isLoading: boolean; // 新增 Loading 狀態
@@ -21,6 +22,8 @@ interface AppState {
   baseCurrency: CurrencyCode;
   rates: Record<string, number>;
   monthlyBudget: number;
+  reminderEnabled: boolean;
+  reminderTime: string; // "HH:mm" format
 
   // Helpers
   activeLedgerMembers: User[];
@@ -59,6 +62,7 @@ interface AppState {
   toggleDarkMode: () => void;
   setBaseCurrency: (currency: CurrencyCode) => void;
   setMonthlyBudget: (amount: number) => void;
+  toggleReminder: (enabled: boolean, time?: string) => Promise<boolean>;
   convertAmount: (amount: number, from: CurrencyCode, to: CurrencyCode) => number;
   refreshRates: () => Promise<void>;
   exportData: () => void;
@@ -88,8 +92,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [language, setLanguage] = useState<Language>('zh');
   const [darkMode, setDarkMode] = useState(false);
   const [baseCurrency, setBaseCurrency] = useState<CurrencyCode>('TWD');
-  const [monthlyBudget, setMonthlyBudget] = useState<number>(30000);
+  const [monthlyBudget, setMonthlyBudgetState] = useState(() => {
+    const saved = localStorage.getItem('monthlyBudget');
+    return saved ? parseFloat(saved) : 0;
+  });
+
   const [rates, setRates] = useState<Record<string, number>>({ TWD: 1 });
+
+  const [reminderEnabled, setReminderEnabled] = useState(() => {
+    return localStorage.getItem('reminderEnabled') === 'true';
+  });
+  const [reminderTime, setReminderTime] = useState(() => {
+    return localStorage.getItem('reminderTime') || '20:00';
+  });
+
+  // Init Reminder on Mount
+  useEffect(() => {
+    if (reminderEnabled) {
+      const [hours, minutes] = reminderTime.split(':').map(Number);
+      // We need translation for title/body, but store uses provider.
+      // Safe to use hardcoded or simple text here, or better, pass t function if possible.
+      // For now, use simple English/Chinese based on current language or just a generic key.
+      // Actually NotificationService handles content. We'll pass generic keys translated inside Service?
+      // Or just pass the strings here.
+      // Let's defer translation to when it triggers? No, Notification needs title/body immediately.
+      // Let's validly grab current language translations.
+      const title = language === 'zh' ? '記帳提醒' : 'Expense Reminder';
+      const body = language === 'zh' ? '今天記得記帳了嗎？' : 'Have you recorded your expenses today?';
+      NotificationService.scheduleReminder(hours, minutes, title, body);
+    }
+  }, []); // Run once on mount (restoration)
 
   // 暫時的 CurrentUser 邏輯 (取列表第一位)
   const currentUser = useMemo(() => {
@@ -377,6 +409,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const toggleDarkMode = () => setDarkMode(prev => !prev);
 
+  const setMonthlyBudget = (amount: number) => {
+    setMonthlyBudgetState(amount);
+    localStorage.setItem('monthlyBudget', amount.toString());
+  };
+
+  const toggleReminder = async (enabled: boolean, time: string = '20:00') => {
+    if (enabled) {
+      const granted = await NotificationService.requestPermission();
+      if (!granted) {
+        addNotification(translations[language].error, 'Permission denied', 'info');
+        return false;
+      }
+
+      const [hours, minutes] = time.split(':').map(Number);
+      const title = language === 'zh' ? '記帳提醒' : 'Expense Reminder';
+      const body = language === 'zh' ? '今天記得記帳了嗎？' : 'Have you recorded your expenses today?';
+      NotificationService.scheduleReminder(hours, minutes, title, body);
+    } else {
+      NotificationService.cancelReminder();
+    }
+
+    setReminderEnabled(enabled);
+    setReminderTime(time);
+    localStorage.setItem('reminderEnabled', String(enabled));
+    localStorage.setItem('reminderTime', time);
+    return true;
+  };
+
   const convertAmount = useCallback((amount: number, from: CurrencyCode, to: CurrencyCode) => {
     if (from === to) return amount;
     const rateFrom = rates[from] || 1;
@@ -565,11 +625,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toggleDarkMode,
     setBaseCurrency,
     setMonthlyBudget,
+
+    // Reminders
+    reminderEnabled,
+    reminderTime,
+    toggleReminder,
+
     convertAmount,
     refreshRates,
     exportData,
     t
-  }), [isLoading, activeLedgerId, activeLedgerMembers, ledgers, expenses, categories, notifications, language, darkMode, baseCurrency, rates, confirmDialog, showConfirm, hideConfirm, calculateBalance, convertAmount, refreshRates, t, users, deleteLedger, monthlyBudget]);
+  }), [isLoading, activeLedgerId, activeLedgerMembers, ledgers, expenses, categories, notifications, language, darkMode, baseCurrency, rates, confirmDialog, showConfirm, hideConfirm, calculateBalance, convertAmount, refreshRates, t, users, deleteLedger, monthlyBudget, reminderEnabled, reminderTime, toggleReminder, setMonthlyBudget]);
 
   return React.createElement(AppContext.Provider, { value }, children);
 };
